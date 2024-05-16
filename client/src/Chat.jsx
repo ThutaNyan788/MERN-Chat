@@ -1,4 +1,4 @@
-import {useContext, useEffect, useState} from "react";
+import {useContext, useEffect, useRef, useState} from "react";
 import Avatar from "./Avatar.jsx";
 import Logo from "./Logo.jsx";
 import {UserContext} from "./UserContext.jsx";
@@ -11,6 +11,7 @@ export default function Chat() {
     const {username, id} = useContext(UserContext);
     const [newMessageText, setNewMessageText] = useState('');
     const [messages, setMessages] = useState([]);
+    const divUnderMessages = useRef();
 
 
     useEffect(() => {
@@ -67,11 +68,20 @@ export default function Chat() {
                 text: newMessageText,
                 sender: id,
                 recipient: selectedUserId,
-                id:Date.now()
+                id: Date.now()
             }
         ]));
 
     }
+
+
+    useEffect(()=>{
+        const div = divUnderMessages.current;
+        if(div)
+        {
+            div.scrollIntoView({behavior:"smooth"});
+        }
+    },[messages])
 
 
     const messagesWithoutDupes = uniqBy(messages, "id");
@@ -101,18 +111,24 @@ export default function Chat() {
                     )}
 
                     {!!selectedUserId && (
-                        <div className={"overflow-y-scroll"}>
-                            {messagesWithoutDupes.map(message => (
-                               <div key={message.id} className={(message.sender === id ? "text-right" : "text-left")}>
-                                   <div
-                                       className={"text-left text-sm inline-block p-2 my-2 rounded-sm " + (message.sender === id ? "bg-blue-500 text-white" : "bg-white")}
-                                   >
-                                       sender:{message.sender}<br/>
-                                       my id :{id}<br/>
-                                       {message.text}
-                                   </div>
-                               </div>
-                            ))}
+                        <div className={"relative h-full"}>
+                            <div className={"overflow-y-scroll absolute inset-0 top-0 left-0 right-0  bottom-2"}>
+                                {messagesWithoutDupes.map(message => (
+                                    <div key={message.id}
+                                         className={(message.sender === id ? "text-right" : "text-left")}>
+                                        <div
+                                            className={"text-left text-sm inline-block p-2 my-2 rounded-sm " + (message.sender === id ? "bg-blue-500 text-white" : "bg-white")}
+                                        >
+                                            sender:{message.sender}<br/>
+                                            my id :{id}<br/>
+                                            {message.text}
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <div ref={divUnderMessages}>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
