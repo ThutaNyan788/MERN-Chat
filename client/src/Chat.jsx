@@ -3,6 +3,7 @@ import Avatar from "./Avatar.jsx";
 import Logo from "./Logo.jsx";
 import {UserContext} from "./UserContext.jsx";
 import {uniqBy} from "loadsh/array.js";
+import axios from "axios";
 
 export default function Chat() {
     const [ws, setWs] = useState(null);
@@ -15,11 +16,22 @@ export default function Chat() {
 
 
     useEffect(() => {
+        connectWs();
+    }, []);
+
+    function connectWs()
+    {
         const ws = new WebSocket("ws://localhost:4040");
         setWs(ws);
 
         ws.addEventListener("message", handleMessage);
-    }, []);
+
+        ws.addEventListener("close",()=>{
+            setTimeout(()=>{
+                connectWs();
+            },1000);
+        })
+    }
 
     function showOnlinePeople(peopleArray) {
         const people = {};
@@ -68,7 +80,7 @@ export default function Chat() {
                 text: newMessageText,
                 sender: id,
                 recipient: selectedUserId,
-                id: Date.now()
+                _id: Date.now()
             }
         ]));
 
@@ -84,7 +96,18 @@ export default function Chat() {
     },[messages])
 
 
-    const messagesWithoutDupes = uniqBy(messages, "id");
+    useEffect(()=>{
+        if(selectedUserId)
+        {
+            axios.get("/messages/"+selectedUserId)
+                .then((res)=>{
+                    setMessages(res.data);
+                });
+        }
+    },[selectedUserId])
+
+
+    const messagesWithoutDupes = uniqBy(messages, "_id");
     return (
         <div className='flex h-screen'>
             <div className="bg-white w-1/3">
@@ -114,13 +137,13 @@ export default function Chat() {
                         <div className={"relative h-full"}>
                             <div className={"overflow-y-scroll absolute inset-0 top-0 left-0 right-0  bottom-2"}>
                                 {messagesWithoutDupes.map(message => (
-                                    <div key={message.id}
+                                    <div key={message._id}
                                          className={(message.sender === id ? "text-right" : "text-left")}>
                                         <div
                                             className={"text-left text-sm inline-block p-2 my-2 rounded-sm " + (message.sender === id ? "bg-blue-500 text-white" : "bg-white")}
                                         >
-                                            sender:{message.sender}<br/>
-                                            my id :{id}<br/>
+                                            {/*sender:{message.sender}<br/>*/}
+                                            {/*my id :{id}<br/>*/}
                                             {message.text}
                                         </div>
                                     </div>
